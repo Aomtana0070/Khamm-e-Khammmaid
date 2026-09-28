@@ -1,0 +1,225 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+// ============================================
+// CORE MODELS
+// ============================================
+
+model User {
+  id            String   @id @unique
+  username      String
+  avatar        String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  guilds        UserGuild[]
+  wallet        Wallet?
+  bank          BankAccount?
+  cooldowns     Cooldown[]
+  memory        Memory[]
+
+  @@index([id])
+}
+
+model Guild {
+  id            String   @id @unique
+  name          String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Guild settings
+  welcomeChannelId  String?
+  logChannelId      String?
+  maidChannelId     String?
+  orderChannelId    String?
+  staffChannelId    String?
+
+  // Economy settings
+  currencyName  String   @default("฿")
+  dailyReward   Int      @default(100)
+  dailyMax      Int      @default(300)
+  workReward    Int      @default(150)
+  questReward   Int      @default(250)
+  hugCooldownMinutes  Int  @default(30)
+  kissCooldownMinutes Int  @default(120)
+  workCooldownMinutes Int  @default(60)
+  fishingCooldownMinutes Int @default(1)
+  maidTalkCooldownMinutes Int @default(120)
+  minigameCooldownMinutes Int @default(10)
+  dailyCooldownMinutes Int @default(1440)
+  questCooldownMinutes Int @default(1440)
+  eventEnabled        Boolean  @default(true)
+  eventIntervalMinutes Int     @default(60)
+  nextEventAt         DateTime?
+  lastEventAt         DateTime?
+  shopOpen            Boolean  @default(true)
+
+  // Relations
+  users         UserGuild[]
+
+  @@index([id])
+}
+
+model UserGuild {
+  id                String   @id @default(cuid())
+  userId            String
+  guildId           String
+  
+  // Profile
+  level             Int      @default(1)
+  exp               Int      @default(0)
+  expToLevel        Int      @default(100)
+  rebirth           Int      @default(0)
+  
+  // Economy
+  money             Int      @default(500)
+  moneyMultiplier   Float    @default(1.0)
+  cafePoints        Int      @default(0)
+  maidGems          Int      @default(0)
+  
+  // Café Stats
+  friendshipLevel   Int      @default(1)
+  friendshipExp     Int      @default(0)
+  ordersCompleted   Int      @default(0)
+  
+  // Job info
+  currentJob        String?  @default("Barista")
+  jobLevel          Int      @default(1)
+  jobExp            Int      @default(0)
+  
+  // Collections
+  cardsOwned        Int      @default(0)
+  achievementsCount Int      @default(0)
+  
+  // Timestamps
+  lastDaily         DateTime?
+  dailyStreak       Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relations
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guild             Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  inventory         Inventory[]
+
+  @@unique([userId, guildId])
+  @@index([userId])
+  @@index([guildId])
+}
+
+// ============================================
+// ECONOMY MODELS
+// ============================================
+
+model Wallet {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  money     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model BankAccount {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  balance   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ============================================
+// INVENTORY & ITEMS
+// ============================================
+
+model Inventory {
+  id            String   @id @default(cuid())
+  userGuildId   String
+  itemType      String   // "food", "drink", "cosmetic", "card", "quest_item", "event_item"
+  itemId        String
+  quantity      Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  userGuild     UserGuild @relation(fields: [userGuildId], references: [id], onDelete: Cascade)
+
+  @@unique([userGuildId, itemType, itemId])
+  @@index([userGuildId])
+}
+
+// ============================================
+// COOLDOWN & RATE LIMITING
+// ============================================
+
+model Cooldown {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // "daily", "work", "shop", "quest", "search", "minigame"
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// ============================================
+// AI MEMORY
+// ============================================
+
+model Memory {
+  id        String   @id @default(cuid())
+  userId    String
+  key       String   // "favorite_drink", "favorite_food", etc
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
+  @@index([userId])
+}
+
+model EventParticipation {
+  id        String   @id @default(cuid())
+  guildId   String
+  userId    String
+  eventKey  String
+  reward    Int
+  exp       Int
+  createdAt DateTime @default(now())
+
+  @@unique([guildId, userId, eventKey])
+  @@index([guildId])
+  @@index([eventKey])
+}
+
+model AdminLog {
+  id        String   @id @default(cuid())
+  guildId   String
+  actorId   String
+  action    String
+  details   String
+  createdAt DateTime @default(now())
+
+  @@index([guildId])
+  @@index([createdAt])
+}
