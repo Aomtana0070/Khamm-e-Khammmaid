@@ -13,7 +13,7 @@ export const helpCommand: CommandHandler = {
       .addFields(
         { name: '💰 คาเฟ่และเศรษฐกิจ', value: '🍰 เมนู  •  🧾 สั่งอาหาร  •  🛒 ร้านค้า\n🎁 Daily  •  🧹 ทำงาน  •  💰 เงินของฉัน', inline: false },
         { name: '🎮 กิจกรรม', value: '🎣 ตกปลา  •  🎲 มินิเกม  •  🎯 Quest\n🎴 Card Pack และการสะสม Maid Card', inline: false },
-        { name: '💕 ความสัมพันธ์', value: '💬 พูดคุยกับ Maid เพื่อเพิ่ม Friendship\n/hug ใช้ได้เมื่อ Lv.2  •  /kiss ใช้ได้เมื่อ Lv.5', inline: false },
+        { name: '💕 ความสัมพันธ์', value: '💬 พูดคุยกับ Maid เพื่อเพิ่ม Friendship\n/love ใช้ได้เมื่อ Lv.1  •  /hug ใช้ได้เมื่อ Lv.2  •  /kiss ใช้ได้เมื่อ Lv.5', inline: false },
         { name: '📚 ข้อมูลผู้เล่น', value: '👤 โปรไฟล์  •  🎒 กระเป๋า  •  🏆 อันดับ  •  ♻️ เกิดใหม่', inline: false },
       );
 

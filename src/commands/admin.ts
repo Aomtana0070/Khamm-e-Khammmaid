@@ -47,7 +47,7 @@ const adminCommand: CommandHandler = {
     {
       type: 1,
       name: 'cooldown',
-      description: 'View or set activity cooldowns in minutes',
+      description: 'View or set action cooldowns; events are configured separately',
       options: [
         {
           type: 3,
@@ -55,6 +55,7 @@ const adminCommand: CommandHandler = {
           description: 'Cooldown to configure',
           required: true,
           choices: [
+            { name: 'All Actions (set to 0)', value: 'all' },
             { name: 'Hug', value: 'hug' },
             { name: 'Kiss', value: 'kiss' },
             { name: 'Work', value: 'work' },
@@ -77,7 +78,7 @@ const adminCommand: CommandHandler = {
     {
       type: 1,
       name: 'event',
-      description: 'Control Maid events',
+      description: 'Start or stop event schedule and set its interval',
       options: [
         {
           type: 3,
@@ -86,9 +87,9 @@ const adminCommand: CommandHandler = {
           required: true,
           choices: [
             { name: 'Send now', value: 'now' },
-            { name: 'Start', value: 'start' },
-            { name: 'Stop', value: 'stop' },
-            { name: 'Set interval', value: 'interval' },
+            { name: 'Enable schedule', value: 'start' },
+            { name: 'Disable schedule', value: 'stop' },
+            { name: 'Set interval (5-1440 minutes)', value: 'interval' },
             { name: 'Status', value: 'status' },
           ],
         },
@@ -303,6 +304,25 @@ const adminCommand: CommandHandler = {
         return;
       }
 
+      if (action === 'all') {
+        const update = {
+          hugCooldownMinutes: 0,
+          kissCooldownMinutes: 0,
+          workCooldownMinutes: 0,
+          fishingCooldownMinutes: 0,
+          maidTalkCooldownMinutes: 0,
+          minigameCooldownMinutes: 0,
+          dailyCooldownMinutes: 0,
+          questCooldownMinutes: 0,
+        };
+        await prisma.guild.update({ where: { id: interaction.guildId }, data: update });
+        await writeAdminLog(interaction.guildId, interaction.user.id, 'cooldown_all', 'minutes=0; events unchanged');
+        await interaction.reply({
+          embeds: [CafeEmbed.success('ปิด Cooldown ของ Action แล้ว', 'ตั้ง cooldown ของ Hug, Kiss, Work, Fishing, Maid Talk, Minigame, Daily และ Quest เป็น **0 นาที** แล้วครับ\n\nการตั้งค่า Event ไม่เปลี่ยนแปลง ใช้ `/admin event` แยกต่างหากได้เลย')],
+        });
+        return;
+      }
+
       const minutes = interaction.options.getInteger('minutes');
       if (minutes === null) {
         await interaction.reply({ content: 'ระบุ minutes ที่ต้องการตั้ง หรือเลือก action:status เพื่อดูค่าทั้งหมดครับ', ephemeral: true });
@@ -370,16 +390,20 @@ const adminCommand: CommandHandler = {
       }
 
       if (action === 'start' || action === 'stop') {
+        if (action === 'start' && !existing.maidChannelId) {
+          await interaction.reply({ embeds: [CafeEmbed.error('ยังไม่ได้ตั้งช่อง Event', 'ใช้ `/admin setup` ในช่องที่ต้องการให้บอตส่ง Event ก่อนครับ')], ephemeral: true });
+          return;
+        }
         await prisma.guild.update({
           where: { id: guildId },
           data: {
             eventEnabled: action === 'start',
-            ...(action === 'start' ? { nextEventAt: new Date() } : {}),
+            nextEventAt: action === 'start' ? new Date() : null,
           },
         });
         await writeAdminLog(guildId, interaction.user.id, `event_${action}`, '');
         await interaction.reply({
-          embeds: [CafeEmbed.success('อัปเดต Event แล้ว', action === 'start' ? 'เปิด Event แล้ว Event ถัดไปจะเริ่มตรวจทันทีครับ' : 'ปิด Event อัตโนมัติแล้วครับ')],
+          embeds: [CafeEmbed.success('อัปเดต Event แล้ว', action === 'start' ? 'เปิดตาราง Event แล้ว รอบถัดไปจะเริ่มภายในประมาณ 1 นาทีครับ' : 'ปิดตาราง Event อัตโนมัติแล้วครับ')],
         });
         return;
       }
@@ -391,17 +415,20 @@ const adminCommand: CommandHandler = {
         }
         await prisma.guild.update({
           where: { id: guildId },
-          data: { eventIntervalMinutes: minutes, nextEventAt: new Date(Date.now() + minutes * 60_000) },
+          data: {
+            eventIntervalMinutes: minutes,
+            nextEventAt: existing.eventEnabled ? new Date(Date.now() + minutes * 60_000) : null,
+          },
         });
         await writeAdminLog(guildId, interaction.user.id, 'event_interval', `minutes=${minutes}`);
         await interaction.reply({
-          embeds: [CafeEmbed.success('ตั้งช่วง Event แล้ว', `Event จะตรวจทุก **${minutes} นาที** ครับ`)],
+          embeds: [CafeEmbed.success('ตั้งช่วง Event แล้ว', `บันทึกช่วงเวลา **${minutes} นาที** แล้วครับ${existing.eventEnabled ? ' Event ถัดไปจะเริ่มหลังช่วงเวลานี้' : ' ตาราง Event ยังปิดอยู่ เปิดได้ด้วย `/admin event action:Enable schedule`'}`)],
         });
         return;
       }
 
       if (action === 'status') {
-        const next = existing.nextEventAt ? `<t:${Math.floor(existing.nextEventAt.getTime() / 1000)}:R>` : 'ยังไม่กำหนด';
+        const next = !existing.eventEnabled ? 'ปิดอยู่' : existing.nextEventAt ? `<t:${Math.floor(existing.nextEventAt.getTime() / 1000)}:R>` : 'กำลังรอกำหนด';
         const last = existing.lastEventAt ? `<t:${Math.floor(existing.lastEventAt.getTime() / 1000)}:R>` : 'ยังไม่มี';
         const [participants, recent] = await Promise.all([
           prisma.eventParticipation.count({ where: { guildId } }),

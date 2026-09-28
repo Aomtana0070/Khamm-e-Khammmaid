@@ -63,11 +63,12 @@ export async function sendMaidEvent(client: Client, guildId: string, force = fal
   }
 
   const nextEventAt = new Date(Date.now() + settings.eventIntervalMinutes * 60_000);
+  const eventInstance = Date.now().toString();
   try {
     await channel.send({
       embeds: [CafeEmbed.main(`Event • ${event.title}`, `${event.message}\n\n💰 รางวัลเข้าร่วม **${event.reward} ฿**\n⭐ EXP **${event.exp}**\n\nกดปุ่มด้านล่างเพื่อเข้าร่วมได้เลยครับ`)],
       components: [new ActionRowBuilder<ButtonBuilder>().addComponents(
-        new ButtonBuilder().setCustomId(`maid_event_join:${event.id}:${new Date().toISOString().slice(0, 10)}`).setLabel('🎉 เข้าร่วม Event').setStyle(ButtonStyle.Success),
+        new ButtonBuilder().setCustomId(`maid_event_join:${event.id}:${eventInstance}`).setLabel('🎉 เข้าร่วม Event').setStyle(ButtonStyle.Success),
       )],
     });
   } catch (error) {

@@ -33,7 +33,7 @@ async function getUserGuild(interaction: CommandInteraction) {
 
 async function useAffection(
   interaction: CommandInteraction,
-  type: 'hug' | 'kiss',
+  type: 'hug' | 'kiss' | 'love',
   minimumLevel: number,
   friendshipGain: number,
   message: string,
@@ -49,9 +49,9 @@ async function useAffection(
   }
 
   const guildSettings = await prisma.guild.findUnique({ where: { id: interaction.guildId! } });
-  const cooldownMinutes = type === 'hug'
-    ? guildSettings?.hugCooldownMinutes ?? 30
-    : guildSettings?.kissCooldownMinutes ?? 120;
+  const cooldownMinutes = type === 'kiss'
+    ? guildSettings?.kissCooldownMinutes ?? 120
+    : guildSettings?.hugCooldownMinutes ?? 30;
   const cooldownType = `${interaction.guildId}_affection_${type}`;
 
   if (cooldownMinutes > 0) {
@@ -91,10 +91,15 @@ async function useAffection(
     data: { friendshipLevel, friendshipExp },
   });
 
-  const imageName = type === 'hug' ? '1.png' : '2.png';
+  const affection = {
+    hug: { imageName: '1.png', title: 'กอด Maid' },
+    kiss: { imageName: '2.png', title: 'จุ๊บแก้ม Maid' },
+    love: { imageName: '3.png', title: 'บอกรัก Maid' },
+  }[type];
+  const imageName = affection.imageName;
   const imagePath = path.join(process.cwd(), 'assets', 'affection', imageName);
   const embed = CafeEmbed.main(
-    type === 'hug' ? 'กอด Maid' : 'จุ๊บแก้ม Maid',
+    affection.title,
     `${message}\n\nได้รับ Friendship EXP **+${friendshipGain}** 💕`,
   );
   const files = existsSync(imagePath)
@@ -112,7 +117,7 @@ export const hugCommand: CommandHandler = {
   name: 'hug',
   description: 'กอด Maid เมื่อสนิทถึงระดับที่กำหนด',
   async execute(interaction: CommandInteraction) {
-    await useAffection(interaction, 'hug', 2, 12, 'Maid ยิ้มแล้วกอดตอบอย่างอบอุ่นครับ 🤗');
+    await useAffection(interaction, 'hug', 2, 12, 'Maid รีบโผเข้ากอดคุณแน่น ๆ ซุกหน้ากับไหล่แล้วกระซิบว่า “รักคุณที่สุดเลยนะครับ ขอบคุณที่เข้ามาเป็นความสุขของ Maid ทุกวัน ขอให้กอดนี้อยู่กับคุณไปนาน ๆ เลย” 🤗💕');
   },
 };
 
@@ -120,6 +125,14 @@ export const kissCommand: CommandHandler = {
   name: 'kiss',
   description: 'จุ๊บแก้ม Maid เมื่อสนิทถึงระดับที่กำหนด',
   async execute(interaction: CommandInteraction) {
-    await useAffection(interaction, 'kiss', 5, 25, 'Maid เขินเล็กน้อยแล้วแตะแก้มตอบอย่างน่ารักครับ 🌸');
+    await useAffection(interaction, 'kiss', 5, 25, 'Maid หน้าแดงจนยิ้มไม่หุบ ก่อนจะจุ๊บแก้มคุณเบา ๆ แล้วบอกว่า “รักคุณนะครับ คนเก่งของ Maid วันนี้ก็น่ารักที่สุดเลย ถ้าโลกใจร้ายกับคุณเมื่อไร กลับมาหา Maid ได้เสมอนะครับ” 🌸💗');
+  },
+};
+
+export const loveCommand: CommandHandler = {
+  name: 'love',
+  description: 'บอกรัก Maid แสนหวาน',
+  async execute(interaction: CommandInteraction) {
+    await useAffection(interaction, 'love', 1, 15, 'Maid ได้ยินแล้วก็ยิ้มจนตาเป็นประกาย ก่อนจะจับมือคุณไว้แล้วบอกว่า “Maid ก็รักคุณที่สุดเลยนะครับ ขอบคุณที่เลือกแวะมาหากันเสมอ ไม่ว่าวันนี้จะเหนื่อยหรือยิ้มได้ ขอให้รู้ไว้ว่าคุณเป็นคนพิเศษของ Maid มาก ๆ เลยนะ” 💗🌷');
   },
 };

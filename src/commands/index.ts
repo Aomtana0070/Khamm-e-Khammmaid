@@ -5,7 +5,7 @@ import { maidCommand } from './maid/maid';
 import { helpCommand } from './maid/help';
 import { CommandHandler } from '../types';
 import adminCommand from './admin';
-import { hugCommand, kissCommand } from './maid/affection';
+import { hugCommand, kissCommand, loveCommand } from './maid/affection';
 import inviteCommand from './invite';
 
 // ===========================
@@ -18,6 +18,7 @@ export const commands: CommandHandler[] = [
   adminCommand,
   hugCommand,
   kissCommand,
+  loveCommand,
   inviteCommand,
 ];
 
