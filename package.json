@@ -13,8 +13,8 @@
     "deploy-commands": "ts-node src/commands/index.ts"
   },
   "dependencies": {
-    "@prisma/adapter-better-sqlite3": "^7.10.0",
-    "@prisma/client": "^7.10.0",
+    "@prisma/adapter-better-sqlite3": "7.10.0",
+    "@prisma/client": "7.10.0",
     "better-sqlite3": "^13.0.3",
     "discord.js": "^14.27.0",
     "dotenv": "^16.6.1",
@@ -24,7 +24,7 @@
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20.19.43",
-    "prisma": "^7.10.0",
+    "prisma": "7.10.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
