@@ -4,6 +4,7 @@ import path from 'node:path';
 import { CommandHandler } from '../../types';
 import CafeEmbed from '../../utils/embeds';
 import prisma from '../../database/prisma';
+import { unlockBadge } from '../../utils/badges';
 
 async function getUserGuild(interaction: CommandInteraction) {
   const guildId = interaction.guildId;
@@ -90,6 +91,7 @@ async function useAffection(
     where: { id: userGuild.id },
     data: { friendshipLevel, friendshipExp },
   });
+  await unlockBadge(userGuild.id, `${type}_first`);
 
   const affection = {
     hug: { imageName: '1.png', title: 'กอด Maid' },

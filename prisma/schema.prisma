@@ -109,6 +109,8 @@ model UserGuild {
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   guild             Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
   inventory         Inventory[]
+  fishingProfile    FishingProfile?
+  badges            BadgeUnlock[]
 
   @@unique([userId, guildId])
   @@index([userId])
@@ -159,6 +161,31 @@ model Inventory {
   userGuild     UserGuild @relation(fields: [userGuildId], references: [id], onDelete: Cascade)
 
   @@unique([userGuildId, itemType, itemId])
+  @@index([userGuildId])
+}
+
+model FishingProfile {
+  id              String   @id @default(cuid())
+  userGuildId     String   @unique
+  rodLevel        Int      @default(1)
+  totalCatches    Int      @default(0)
+  biggestCatch    Int      @default(0)
+  equippedBait    String   @default("none")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  userGuild       UserGuild @relation(fields: [userGuildId], references: [id], onDelete: Cascade)
+}
+
+model BadgeUnlock {
+  id            String   @id @default(cuid())
+  userGuildId   String
+  badgeId       String
+  unlockedAt    DateTime @default(now())
+
+  userGuild     UserGuild @relation(fields: [userGuildId], references: [id], onDelete: Cascade)
+
+  @@unique([userGuildId, badgeId])
   @@index([userGuildId])
 }
 

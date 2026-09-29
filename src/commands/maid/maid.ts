@@ -172,9 +172,16 @@ export const maidCommand: CommandHandler = {
             .setStyle(ButtonStyle.Success),
         );
 
+      const row5 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId('badge_book')
+          .setLabel('🏅 Badges')
+          .setStyle(ButtonStyle.Secondary),
+      );
+
       await interaction.editReply({
         embeds: [mainEmbed],
-        components: [row1, row2, row3, row4],
+        components: [row1, row2, row3, row4, row5],
       });
 
     } catch (error) {

@@ -2,6 +2,9 @@ import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle } from 
 import prisma from '../database/prisma';
 import CafeEmbed from './embeds';
 import { maidEvents } from '../events/maidEvents';
+import { handleFishingButton, showFishingHub } from './fishing';
+import { handleMinigameButton, showMinigameMenu } from './minigames';
+import { showBadges, unlockBadge } from './badges';
 
 type ActivityKind = 'work' | 'fishing' | 'maid_talk' | 'minigame';
 
@@ -137,6 +140,8 @@ async function handleActivityAnswer(interaction: ButtonInteraction) {
       });
       const paidReward = await addActivityMoney(userGuild.id, reward);
       await addExperience(userGuild.id, 20);
+      await unlockBadge(userGuild.id, 'work_first');
+      if (userGuild.jobExp + 20 >= 200) await unlockBadge(userGuild.id, 'work_10');
       result = `ช่วยรับออเดอร์สำเร็จ ได้รับ 💰 **${paidReward} ฿** และ ⭐ **20 EXP** ครับ`;
       break;
     }
@@ -164,6 +169,7 @@ async function handleActivityAnswer(interaction: ButtonInteraction) {
         await prisma.userGuild.update({ where: { id: userGuild.id }, data: { cardsOwned: { increment: 1 } } });
       }
       await addFriendshipExperience(userGuild.id, friendshipExp);
+      await unlockBadge(userGuild.id, 'talk_first');
       result = `Maid ยิ้มกว้างที่คุณเป็นห่วง ได้รับ Friendship EXP **+${friendshipExp}**${foundCard ? '\n🎴 ความทรงจำดี ๆ ปลดล็อก Maid Card +1 ใบ!' : ''}`;
       break;
     }
@@ -250,10 +256,12 @@ async function handleEventAnswer(interaction: ButtonInteraction) {
 
   const reward = await addActivityMoney(userGuild.id, event.reward);
   await addExperience(userGuild.id, event.exp);
+  await unlockBadge(userGuild.id, 'event_first');
   const foundCard = eventId === 'card_hunt' && Math.random() < 0.25;
   if (foundCard) {
     await prisma.userGuild.update({ where: { id: userGuild.id }, data: { cardsOwned: { increment: 1 } } });
     await addInventoryItem(userGuild.id, 'card', 'maid_card_event');
+      if (userGuild.cardsOwned + 1 >= 10) await unlockBadge(userGuild.id, 'card_10');
   }
   await interaction.update({
     embeds: [CafeEmbed.success(`ร่วม ${event.title} สำเร็จ`, `ตอบโจทย์ได้แล้วครับ! ได้รับ 💰 **${reward} ฿** และ ⭐ **${event.exp} EXP**${foundCard ? '\n🎴 พบ Maid Card พิเศษ +1 ใบ!' : ''}`)],
@@ -624,6 +632,7 @@ async function handleDailyQuest(interaction: ButtonInteraction, userGuild: Await
   }
   const reward = await addActivityMoney(userGuild.id, 250);
   await addExperience(userGuild.id, 25);
+  await unlockBadge(userGuild.id, 'quest_first');
   await interaction.reply({
     embeds: [CafeEmbed.success('Quest สำเร็จ', `ได้รับ 💰 **${reward} ฿** และ ⭐ **25 EXP** ครับ`)],
     ephemeral: true,
@@ -631,6 +640,22 @@ async function handleDailyQuest(interaction: ButtonInteraction, userGuild: Await
 }
 
 export async function handleMaidButton(interaction: ButtonInteraction) {
+  if (interaction.customId.startsWith('fish_')) {
+    await handleFishingButton(interaction);
+    return;
+  }
+
+  if (interaction.customId.startsWith('minigame_')) {
+    await handleMinigameButton(interaction);
+    return;
+  }
+
+  if (interaction.customId === 'badge_book') {
+    const userGuild = await getUserGuild(interaction);
+    await interaction.reply({ embeds: [await showBadges(userGuild.id)], ephemeral: true });
+    return;
+  }
+
   if (interaction.customId.startsWith('maid_activity_answer:')) {
     await handleActivityAnswer(interaction);
     return;
@@ -724,6 +749,7 @@ export async function handleMaidButton(interaction: ButtonInteraction) {
       await prisma.inventory.update({ where: { id: ownedItem.id }, data: { quantity: { decrement: 1 } } });
       const friendshipGain = itemType === 'meal' ? 25 : itemType === 'food' ? 20 : 15;
       await addFriendshipExperience(userGuild.id, friendshipGain);
+      await unlockBadge(userGuild.id, 'gift_first');
       await interaction.reply({ embeds: [CafeEmbed.success('Maid ดีใจมาก', `มอบ ${item.emoji} **${item.name}** ให้ Maid แล้วครับ\nได้รับ Friendship EXP **+${friendshipGain}** 💕`)], ephemeral: true });
       return;
     }
@@ -741,6 +767,8 @@ export async function handleMaidButton(interaction: ButtonInteraction) {
       }),
     ]);
     await addFriendshipExperience(userGuild.id, itemType === 'meal' ? 15 : 10);
+    await unlockBadge(userGuild.id, 'order_first');
+    if (userGuild.ordersCompleted + 1 >= 50) await unlockBadge(userGuild.id, 'order_50');
     await interaction.reply({
       embeds: [CafeEmbed.success('สั่งอาหารสำเร็จ', `ได้รับ ${item.emoji} **${item.name}** 1 ชิ้น\nใช้เงิน ${item.price} ฿ครับ`)],
       components: [giftButton(item.id)],
@@ -812,6 +840,9 @@ export async function handleMaidButton(interaction: ButtonInteraction) {
         }),
       ]);
       await addFriendshipExperience(userGuild.id, 10);
+      await unlockBadge(userGuild.id, 'order_first');
+      if (userGuild.ordersCompleted + 1 >= 50) await unlockBadge(userGuild.id, 'order_50');
+      await unlockBadge(userGuild.id, 'gift_first');
 
       await interaction.reply({
         embeds: [CafeEmbed.success('สั่งอาหารสำเร็จ', `ได้รับ ${item.emoji} ${item.name} 1 ชิ้น\nใช้เงิน ${item.price} ฿ และได้รับ Friendship EXP +10 ครับ`)],
@@ -975,6 +1006,7 @@ export async function handleMaidButton(interaction: ButtonInteraction) {
         data: { money: { decrement: price }, cardsOwned: { increment: 1 } },
       });
       await addInventoryItem(userGuild.id, 'card', card.id);
+      if (userGuild.cardsOwned + 1 >= 10) await unlockBadge(userGuild.id, 'card_10');
 
       await interaction.reply({
         embeds: [CafeEmbed.success('เปิด Card Pack สำเร็จ', `ได้ ${card.emoji} **${card.name}** (${card.rarity}) ครับ`)],
@@ -1027,6 +1059,8 @@ export async function handleMaidButton(interaction: ButtonInteraction) {
         },
       });
       const paidReward = await addActivityMoney(userGuild.id, reward);
+      await unlockBadge(userGuild.id, 'daily_first');
+      if (userGuild.dailyStreak + 1 >= 7) await unlockBadge(userGuild.id, 'streak_7');
 
       await interaction.reply({
         embeds: [CafeEmbed.success('Daily Reward', `ได้รับ 💰 **${paidReward} ฿** ครับ\nStreak ปัจจุบัน: **${userGuild.dailyStreak + 1} วัน**`)],
@@ -1047,6 +1081,7 @@ export async function handleMaidButton(interaction: ButtonInteraction) {
         return;
       }
 
+      await unlockBadge(userGuild.id, 'rebirth_first');
       await interaction.reply({
         embeds: [CafeEmbed.success('Rebirth สำเร็จ', `เริ่มต้นใหม่ที่ Lv. 1\n♻️ Rebirth: **${result.rebirth}**\n📈 ตัวคูณเงินกิจกรรมใหม่: **x${result.multiplier.toFixed(2)}**\n💰 เงินเริ่มต้น: **500 ฿**`)],
         ephemeral: true,
@@ -1148,23 +1183,8 @@ export async function handleMaidButton(interaction: ButtonInteraction) {
     }
 
     case 'fishing': {
-      const minutesRemaining = await checkCooldown(interaction.user.id, interaction.guildId!, 'fishing');
-
-      if (minutesRemaining) {
-        await interaction.reply({
-          embeds: [CafeEmbed.info('รอก่อนนะครับ', `ตกปลาได้อีกในประมาณ ${minutesRemaining} นาทีครับ 🎣`)],
-          ephemeral: true,
-        });
-        return;
-      }
-
-      const challenge = buildActivityChallenge('fishing');
-      await storeChallenge(interaction.user.id, interaction.guildId!, 'activity_fishing', challenge.answerIndex);
-      await interaction.reply({
-        embeds: [CafeEmbed.main('ออกทริปตกปลา', `${challenge.prompt}\n\nเลือกจังหวะที่จะลงมือเพื่อมีโอกาสได้ปลาและรางวัลครับ`)],
-        components: [challenge.row],
-        ephemeral: true,
-      });
+      const userGuild = await getUserGuild(interaction);
+      await showFishingHub(interaction, userGuild.id);
       return;
     }
 
@@ -1190,29 +1210,13 @@ export async function handleMaidButton(interaction: ButtonInteraction) {
     }
 
     case 'mini_game': {
-      const minutesRemaining = await checkCooldown(interaction.user.id, interaction.guildId!, 'minigame');
-
-      if (minutesRemaining) {
-        await interaction.reply({
-          embeds: [CafeEmbed.info('มินิเกม', `เล่นรอบใหม่ได้ในอีก ${minutesRemaining} นาทีครับ 🎲`)],
-          ephemeral: true,
-        });
-        return;
-      }
-
-      const challenge = buildActivityChallenge('minigame');
-      await storeChallenge(interaction.user.id, interaction.guildId!, 'activity_minigame', challenge.answerIndex);
-      await interaction.reply({
-        embeds: [CafeEmbed.main(`มินิเกม • ${challenge.game ?? 'คาเฟ่'}`, `${challenge.prompt}\n\nตอบให้ถูกเพื่อคว้ารางวัลรอบนี้ครับ 🎲`)],
-        components: [challenge.row],
-        ephemeral: true,
-      });
+      await showMinigameMenu(interaction);
       return;
     }
 
     case 'help_menu':
       await interaction.reply({
-        embeds: [CafeEmbed.info('Help', '🍰 เมนูคาเฟ่ - ดูรายการอาหาร\n🧾 สั่งอาหาร - ซื้อ Strawberry Cake\n👤 โปรไฟล์ - ดูเลเวลและสถิติ\n💰 กระเป๋าเงิน - ดูเงินและแต้ม\n🎁 Daily - รับรางวัลทุก 24 ชั่วโมง\n🎯 Quest - รับรางวัลภารกิจทุก 24 ชั่วโมง\n🎴 Maid Card - ดูการ์ดสะสม\n🎒 Inventory - ดูไอเทม\n🏆 Ranking - ดูอันดับในเซิร์ฟเวอร์\n\n🧹 ทำงานที่ร้าน - หาเงินและ EXP\n🎣 ตกปลา - ขายปลาและมีโอกาสได้ Maid Card\n💬 คุยกับ Maid - เพิ่ม Friendship และมีโอกาสได้การ์ด\n🎲 มินิเกม - สุ่มเล่น 10 แนว รับรางวัลเมื่อตอบถูก\n\n💗 /love บอกรัก Maid  •  🤗 /hug Lv.2  •  🌸 /kiss Lv.5')],
+        embeds: [CafeEmbed.info('Help', '🍰 เมนูคาเฟ่ - ดูรายการอาหาร\n🧾 สั่งอาหาร - ซื้อเมนู\n👤 โปรไฟล์ - ดูเลเวลและสถิติ\n💰 กระเป๋าเงิน - ดูเงินและแต้ม\n🎁 Daily - รับรางวัลประจำวัน\n🎯 Quest - ทำภารกิจ\n🎴 Maid Card - ดูการ์ดสะสม\n🎒 Inventory - ดูไอเทม\n🏅 Badges - ดูสมุดความสำเร็จ\n🏆 Ranking - ดูอันดับในเซิร์ฟเวอร์\n\n🧹 ทำงานที่ร้าน - เล่น action รับออเดอร์\n🎣 ตกปลา - คุมแถบรีล ลุ้นปลา 100 ชนิด อัปเบ็ดและใช้เหยื่อได้\n💬 คุยกับ Maid - เพิ่ม Friendship\n🎲 มินิเกม - XO, หาทุ่นระเบิด และเป่ายิ้งฉุบ\n\n💗 /love บอกรัก Maid  •  🤗 /hug Lv.2  •  🌸 /kiss Lv.5')],
         ephemeral: true,
       });
       return;
