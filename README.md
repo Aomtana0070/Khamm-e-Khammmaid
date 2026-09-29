@@ -20,7 +20,7 @@ cp .env.example .env
 nano .env
 ```
 
-Never commit or share `.env`. Docker Compose keeps the production SQLite database at `/data/cafe.db` in its persistent volume, regardless of the local development database URL in `.env`.
+Never commit or share `.env`. Docker Compose keeps the production SQLite database at `/data/cafe.db` in its persistent volume, regardless of the local development database URL in `.env`. It also writes daily and pre-schema-sync SQLite backups to `./backups` on the host, keeping up to 30 snapshots. The backup folder is separate from the Docker database volume, so it survives `docker compose down -v`.
 
 5. Start the production container:
 
@@ -28,7 +28,7 @@ Never commit or share `.env`. Docker Compose keeps the production SQLite databas
 docker compose up -d --build
 ```
 
-The container runs Prisma schema synchronization and then `npm start`; it does not run `npm run dev`. The database persists in the `cafe-data` Docker volume. View logs with `docker compose logs -f maid-bot`, stop with `docker compose down`, and deploy updates with `git pull` followed by `docker compose up -d --build`.
+The container creates a backup before Prisma schema synchronization and then starts the bot; it does not run `npm run dev`. The database persists in the `cafe-data` Docker volume. View logs with `docker compose logs -f maid-bot`, stop with `docker compose down`, and deploy updates with `git pull` followed by `docker compose up -d --build`. Avoid deleting the host `backups` folder; restore a snapshot by stopping the bot and copying the chosen backup over the active database file.
 
 The VM must remain within the provider's free-tier limits and stay powered on. This setup cannot be deployed from this workspace because it requires your cloud account and Discord credentials.
 

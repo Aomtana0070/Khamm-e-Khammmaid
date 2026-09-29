@@ -9,12 +9,14 @@ services:
       CLIENT_ID: ${CLIENT_ID:?Set CLIENT_ID in .env}
       GUILD_ID: ${GUILD_ID:?Set GUILD_ID in .env}
       DATABASE_URL: file:/data/cafe.db
+      DATABASE_BACKUP_DIR: /backups
       LOG_LEVEL: ${LOG_LEVEL:-info}
       LOG_CHANNEL_ID: ${LOG_CHANNEL_ID:-}
       OWNER_ID: ${OWNER_ID:-}
       AI_API_KEY: ${AI_API_KEY:-}
     volumes:
       - cafe-data:/data
+      - ./backups:/backups
 
 volumes:
   cafe-data:

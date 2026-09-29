@@ -2,6 +2,7 @@ import { Client, GatewayIntentBits } from 'discord.js';
 import config from './config/config';
 import logger from './utils/logger';
 import prisma from './database/prisma';
+import { createDatabaseBackup } from './database/backup';
 import { deployCommands } from './commands';
 import { readyEvent } from './events/ready';
 import { interactionCreateEvent } from './events/interactionCreate';
@@ -58,6 +59,7 @@ process.on('SIGINT', async () => {
 async function start() {
   try {
     logger.info('🎀 Starting Khammée Khammmaid Café...');
+    await createDatabaseBackup();
     
     // Deploy slash commands
     await deployCommands();

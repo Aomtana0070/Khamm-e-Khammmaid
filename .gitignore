@@ -1,4 +1,10 @@
 .env
+backups/
+dev.db
+dev.db-shm
+dev.db-wal
+dist/
+node_modules/.env
 .env.*
 !.env.example
 node_modules/

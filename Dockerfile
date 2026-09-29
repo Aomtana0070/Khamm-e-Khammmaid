@@ -19,4 +19,4 @@ COPY assets ./assets
 RUN npm run build
 
 ENV NODE_ENV=production
-CMD ["sh", "-c", "npx prisma db push && npm start"]
+CMD ["sh", "-c", "npm run db:push && npm start"]
