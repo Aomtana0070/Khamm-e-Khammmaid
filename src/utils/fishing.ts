@@ -197,8 +197,8 @@ async function recordBaitUse(interaction: ButtonInteraction, baitId: string) {
 }
 
 function renderFishingGame(state: FishingState, rodLevel: number) {
-  const control = Array.from({ length: 5 }, (_, index) => index === state.position ? '🟦' : '─').join('');
-  const fishLine = Array.from({ length: 5 }, (_, index) => index === state.target ? '🐟' : '─').join('');
+  const control = Array.from({ length: 3 }, (_, index) => index === state.position ? '🟦' : '─').join('');
+  const fishLine = Array.from({ length: 3 }, (_, index) => index === state.target ? '🐟' : '─').join('');
   const progress = `${'🟩'.repeat(state.progress)}${'⬛'.repeat( 1 - state.progress)}`;
   const misses = '❤️'.repeat(3 - state.misses);
   const baitInfo = state.baitLuck ? `\nเหยื่อเพิ่มโชค **+${state.baitLuck}%**` : '';
@@ -218,6 +218,11 @@ function renderFishingGame(state: FishingState, rodLevel: number) {
 }
 
 async function startFishing(interaction: ButtonInteraction, userGuildId: string) {
+  const active = await readFishingState(interaction);
+  if (active) {
+    await interaction.reply({ content: 'คุณมีปลาติดเบ็ดอยู่แล้ว กลับไปเล่นรอบนั้นให้จบก่อนนะครับ 🎣', ephemeral: true });
+    return;
+  }
   const guild = await prisma.guild.findUnique({ where: { id: interaction.guildId! } });
   const cooldownMinutes = guild?.fishingCooldownMinutes ?? 1;
   const cooldownType = `${interaction.guildId}_fishing`;
