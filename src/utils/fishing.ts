@@ -33,30 +33,30 @@ export const fishCatalog = rarityTiers.flatMap((tier, tierIndex) => fishPrefixes
 
 export const fishingRods = [
   { name: 'เบ็ดไม้ไผ่', cost: 0, accuracy: 0, luck: 0 },
-  { name: 'เบ็ดฝึกหัด', cost: 500, accuracy: 0, luck: 2 },
-  { name: 'เบ็ดไฟเบอร์', cost: 1200, accuracy: 1, luck: 5 },
-  { name: 'เบ็ดคาร์บอน', cost: 2600, accuracy: 1, luck: 9 },
-  { name: 'เบ็ดเงิน', cost: 5000, accuracy: 1, luck: 14 },
-  { name: 'เบ็ดทอง', cost: 9500, accuracy: 2, luck: 20 },
-  { name: 'เบ็ดทะเลลึก', cost: 18000, accuracy: 2, luck: 27 },
-  { name: 'เบ็ดคริสตัล', cost: 35000, accuracy: 2, luck: 35 },
-  { name: 'เบ็ดมังกร', cost: 70000, accuracy: 3, luck: 45 },
-  { name: 'เบ็ดดารา', cost: 140000, accuracy: 3, luck: 58 },
-  { name: 'เบ็ดห้วงอเวจี', cost: 280000, accuracy: 4, luck: 74 },
-  { name: 'เบ็ดเทพ', cost: 600000, accuracy: 4, luck: 95 },
+  { name: 'เบ็ดฝึกหัด', cost: 500, accuracy: 0, luck: 20 },
+  { name: 'เบ็ดไฟเบอร์', cost: 1200, accuracy: 1, luck: 50 },
+  { name: 'เบ็ดคาร์บอน', cost: 2600, accuracy: 1, luck: 90 },
+  { name: 'เบ็ดเงิน', cost: 5000, accuracy: 1, luck: 140 },
+  { name: 'เบ็ดทอง', cost: 9500, accuracy: 2, luck: 200 },
+  { name: 'เบ็ดทะเลลึก', cost: 18000, accuracy: 2, luck: 270 },
+  { name: 'เบ็ดคริสตัล', cost: 35000, accuracy: 2, luck: 350 },
+  { name: 'เบ็ดมังกร', cost: 70000, accuracy: 3, luck: 450 },
+  { name: 'เบ็ดดารา', cost: 140000, accuracy: 3, luck: 580 },
+  { name: 'เบ็ดห้วงอเวจี', cost: 280000, accuracy: 4, luck: 740 },
+  { name: 'เบ็ดเทพ', cost: 600000, accuracy: 4, luck: 950 },
 ];
 
 export const fishingBaits = [
-  { id: 'worm', name: 'ไส้เดือน', price: 30, luck: 3, emoji: '🪱' },
-  { id: 'bread', name: 'ขนมปัง', price: 50, luck: 5, emoji: '🍞' },
-  { id: 'shrimp', name: 'กุ้งสด', price: 100, luck: 8, emoji: '🦐' },
-  { id: 'glow_worm', name: 'หนอนเรืองแสง', price: 180, luck: 12, emoji: '✨' },
-  { id: 'sweet_corn', name: 'ข้าวโพดหวาน', price: 280, luck: 16, emoji: '🌽' },
-  { id: 'golden_lure', name: 'เหยื่อทอง', price: 500, luck: 22, emoji: '🪙' },
-  { id: 'moon_jelly', name: 'วุ้นจันทรา', price: 900, luck: 30, emoji: '🌙' },
-  { id: 'dragon_scale', name: 'เกล็ดมังกร', price: 1600, luck: 40, emoji: '🐉' },
-  { id: 'star_dust', name: 'ผงดวงดาว', price: 3000, luck: 55, emoji: '🌠' },
-  { id: 'void_lure', name: 'เหยื่อห้วงมิติ', price: 6000, luck: 75, emoji: '🌀' },
+  { id: 'worm', name: 'ไส้เดือน', price: 30, luck: 30, emoji: '🪱' },
+  { id: 'bread', name: 'ขนมปัง', price: 50, luck: 50, emoji: '🍞' },
+  { id: 'shrimp', name: 'กุ้งสด', price: 100, luck: 80, emoji: '🦐' },
+  { id: 'glow_worm', name: 'หนอนเรืองแสง', price: 180, luck: 120, emoji: '✨' },
+  { id: 'sweet_corn', name: 'ข้าวโพดหวาน', price: 280, luck: 160, emoji: '🌽' },
+  { id: 'golden_lure', name: 'เหยื่อทอง', price: 500, luck: 220, emoji: '🪙' },
+  { id: 'moon_jelly', name: 'วุ้นจันทรา', price: 900, luck: 300, emoji: '🌙' },
+  { id: 'dragon_scale', name: 'เกล็ดมังกร', price: 1600, luck: 400, emoji: '🐉' },
+  { id: 'star_dust', name: 'ผงดวงดาว', price: 3000, luck: 550, emoji: '🌠' },
+  { id: 'void_lure', name: 'เหยื่อห้วงมิติ', price: 6000, luck: 750, emoji: '🌀' },
 ];
 
 type FishingState = {
@@ -199,7 +199,7 @@ async function recordBaitUse(interaction: ButtonInteraction, baitId: string) {
 function renderFishingGame(state: FishingState, rodLevel: number) {
   const control = Array.from({ length: 11 }, (_, index) => index === state.position ? '🟦' : '─').join('');
   const fishLine = Array.from({ length: 11 }, (_, index) => index === state.target ? '🐟' : '─').join('');
-  const progress = `${'🟩'.repeat(state.progress)}${'⬛'.repeat(4 - state.progress)}`;
+  const progress = `${'🟩'.repeat(state.progress)}${'⬛'.repeat(1 - state.progress)}`;
   const misses = '❤️'.repeat(3 - state.misses);
   const baitInfo = state.baitLuck ? `\nเหยื่อเพิ่มโชค **+${state.baitLuck}%**` : '';
   const embed = CafeEmbed.main('🎣 จังหวะตกปลา', [
@@ -218,11 +218,6 @@ function renderFishingGame(state: FishingState, rodLevel: number) {
 }
 
 async function startFishing(interaction: ButtonInteraction, userGuildId: string) {
-  const active = await readFishingState(interaction);
-  if (active) {
-    await interaction.reply({ content: 'คุณมีปลาติดเบ็ดอยู่แล้ว กลับไปเล่นรอบนั้นให้จบก่อนนะครับ 🎣', ephemeral: true });
-    return;
-  }
   const guild = await prisma.guild.findUnique({ where: { id: interaction.guildId! } });
   const cooldownMinutes = guild?.fishingCooldownMinutes ?? 1;
   const cooldownType = `${interaction.guildId}_fishing`;
