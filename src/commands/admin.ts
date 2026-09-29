@@ -92,8 +92,8 @@ const adminCommand: CommandHandler = {
             { name: 'Stop luck event', value: 'event_stop' },
           ],
         },
-        { type: 4, name: 'percent', description: 'Luck bonus percentage', required: false, min_value: 0, max_value: 500 },
-        { type: 4, name: 'minutes', description: 'Luck event duration (5-1440 minutes)', required: false, min_value: 5, max_value: 1440 },
+        { type: 4, name: 'percent', description: 'Luck bonus percentage', required: false, min_value: 0, max_value: 50000000000000 },
+        { type: 4, name: 'minutes', description: 'Luck event duration (5-1440 minutes)', required: false, min_value: 5, max_value: 144000000 },
       ],
     },
     {
