@@ -197,9 +197,9 @@ async function recordBaitUse(interaction: ButtonInteraction, baitId: string) {
 }
 
 function renderFishingGame(state: FishingState, rodLevel: number) {
-  const control = Array.from({ length: 11 }, (_, index) => index === state.position ? '🟦' : '─').join('');
-  const fishLine = Array.from({ length: 11 }, (_, index) => index === state.target ? '🐟' : '─').join('');
-  const progress = `${'🟩'.repeat(state.progress)}${'⬛'.repeat(1 - state.progress)}`;
+  const control = Array.from({ length: 5 }, (_, index) => index === state.position ? '🟦' : '─').join('');
+  const fishLine = Array.from({ length: 5 }, (_, index) => index === state.target ? '🐟' : '─').join('');
+  const progress = `${'🟩'.repeat(state.progress)}${'⬛'.repeat( 1 - state.progress)}`;
   const misses = '❤️'.repeat(3 - state.misses);
   const baitInfo = state.baitLuck ? `\nเหยื่อเพิ่มโชค **+${state.baitLuck}%**` : '';
   const embed = CafeEmbed.main('🎣 จังหวะตกปลา', [
