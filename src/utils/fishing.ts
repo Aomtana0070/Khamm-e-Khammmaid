@@ -259,8 +259,8 @@ async function startFishing(interaction: ButtonInteraction, userGuildId: string)
   }
   await profileUpdateBait(userGuildId);
   const state: FishingState = {
-    position: 5,
-    target: 2 + Math.floor(Math.random() * 7),
+    position: 2,
+    target: Math.floor(Math.random() * 3),
     progress: 0,
     misses: 0,
     expiresAt: Date.now() + 5 * 60_000,
@@ -464,12 +464,12 @@ export async function handleFishingButton(interaction: ButtonInteraction) {
     if (id === 'fish_move_left') state.position = Math.max(0, state.position - 1);
     if (id === 'fish_move_right') state.position = Math.min(10, state.position + 1);
     if (id === 'fish_reel') {
-      const inRange = Math.abs(state.position - state.target) <= Math.min(4, 1 + fishingRods[profile.rodLevel - 1].accuracy);
+      const inRange = Math.abs(state.position - state.target) <= Math.min(2, 1 + fishingRods[profile.rodLevel - 1].accuracy);
       if (inRange) state.progress += 1;
       else state.misses += 1;
       state.target = Math.max(0, Math.min(10, state.target + Math.floor(Math.random() * 5) - 2));
     }
-    if (state.progress >= 4) {
+    if (state.progress >= 1) {
       if (!(await consumeFishingState(interaction, previousState))) {
         await interaction.reply({ content: 'รอบนี้ถูกเล่นไปแล้วครับ 🎣', ephemeral: true });
         return;
