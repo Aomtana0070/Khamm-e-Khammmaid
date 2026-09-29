@@ -105,6 +105,10 @@ async function fishingHub(userGuildId: string) {
     prisma.inventory.findMany({ where: { userGuildId, itemType: 'bait' }, orderBy: { createdAt: 'asc' } }),
     prisma.userGuild.findUniqueOrThrow({ where: { id: userGuildId } }),
   ]);
+  const guildSettings = await prisma.guild.findUnique({ where: { id: userGuild.guildId } });
+  const eventLuck = guildSettings?.fishingEventLuckUntil && guildSettings.fishingEventLuckUntil > new Date()
+    ? guildSettings.fishingEventLuckBonus
+    : 0;
   const rod = fishingRods[profile.rodLevel - 1];
   const nextRod = fishingRods[profile.rodLevel];
   const equipped = fishingBaits.find((bait) => bait.id === profile.equippedBait);
@@ -117,6 +121,7 @@ async function fishingHub(userGuildId: string) {
   const embed = CafeEmbed.main('🎣 Fishing Dock', [
     `เบ็ดระดับ **${profile.rodLevel}/12 • ${rod.name}** | โชคเบ็ด +${rod.luck}%`,
     `ปลาที่ตกได้ **${profile.totalCatches}/100** | เหยื่อ: **${equipped?.name ?? 'ไม่มี'}**`,
+    `Fishing Luck: เซิร์ฟเวอร์ +${guildSettings?.fishingLuckBonus ?? 0}%${eventLuck ? ` • Event +${eventLuck}%` : ''}`,
     `เงิน **${userGuild.money.toLocaleString()} ฿**`,
     '',
     `**เหยื่อในกระเป๋า**\n${baits}`,
@@ -272,7 +277,12 @@ async function profileUpdateBait(userGuildId: string) {
 
 async function catchFish(interaction: ButtonInteraction, userGuildId: string, baitLuck: number) {
   const profile = await getProfile(userGuildId);
-  const luck = fishingRods[profile.rodLevel - 1].luck + baitLuck;
+  const userGuild = await prisma.userGuild.findUniqueOrThrow({ where: { id: userGuildId } });
+  const guildSettings = await prisma.guild.findUnique({ where: { id: userGuild.guildId } });
+  const eventLuck = guildSettings?.fishingEventLuckUntil && guildSettings.fishingEventLuckUntil > new Date()
+    ? guildSettings.fishingEventLuckBonus
+    : 0;
+  const luck = fishingRods[profile.rodLevel - 1].luck + baitLuck + (guildSettings?.fishingLuckBonus ?? 0) + eventLuck;
   const weights = fishCatalog.map((fish) => fish.weight * (1 + (fish.rarityIndex * luck) / 180));
   const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
   let selection = Math.random() * totalWeight;
@@ -282,7 +292,7 @@ async function catchFish(interaction: ButtonInteraction, userGuildId: string, ba
     if (selection <= 0) break;
   }
   const fish = fishCatalog[index];
-  const reward = Math.max(1, Math.floor(fish.reward * (await prisma.userGuild.findUniqueOrThrow({ where: { id: userGuildId } })).moneyMultiplier));
+  const reward = Math.max(1, Math.floor(fish.reward * userGuild.moneyMultiplier));
   const nextCount = profile.totalCatches + 1;
   const treasure = fish.rarityIndex >= 3 && Math.random() < Math.min(0.7, 0.12 + fish.rarityIndex * 0.06);
   const treasureId = treasure ? fish.rarityIndex >= 7 ? 'ancient_relic' : 'shimmering_scale' : null;
@@ -315,7 +325,7 @@ async function catchFish(interaction: ButtonInteraction, userGuildId: string, ba
   if (speciesCount >= fishCatalog.length) badges.push(await unlockBadge(userGuildId, 'fish_complete_set'));
   const unlocked = badges.filter(Boolean).map((badge) => `${badge?.emoji} **${badge?.name}**`);
   await interaction.update({
-    embeds: [CafeEmbed.success(`${fish.rarityEmoji} ${fish.rarity} • ${fish.name}`, `ขายปลาได้ **${reward.toLocaleString()} ฿**${treasure ? `\n🎁 พบไอเทมพิเศษ: **${treasureId === 'ancient_relic' ? 'โบราณวัตถุลึกลับ' : 'เกล็ดประกาย'}**` : ''}\n🐟 สะสมแล้ว **${nextCount}/100**${unlocked.length ? `\n\n🏅 Badge ใหม่: ${unlocked.join(', ')}` : ''}`)],
+    embeds: [CafeEmbed.success(`${fish.rarityEmoji} ${fish.rarity} • ${fish.name}`, `ขายปลาได้ **${reward.toLocaleString()} ฿**\n🍀 Luck รวม **${luck}%**${eventLuck ? ` (รวม Event +${eventLuck}%)` : ''}${treasure ? `\n🎁 พบไอเทมพิเศษ: **${treasureId === 'ancient_relic' ? 'โบราณวัตถุลึกลับ' : 'เกล็ดประกาย'}**` : ''}\n🐟 สะสมแล้ว **${nextCount}/100**${unlocked.length ? `\n\n🏅 Badge ใหม่: ${unlocked.join(', ')}` : ''}`)],
     components: [row(actionButton('fish_home', 'กลับท่าเรือ', ButtonStyle.Primary))],
   });
 }

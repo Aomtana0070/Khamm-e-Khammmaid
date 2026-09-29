@@ -7,6 +7,7 @@ import { CommandHandler } from '../types';
 import adminCommand from './admin';
 import { hugCommand, kissCommand, loveCommand } from './maid/affection';
 import inviteCommand from './invite';
+import botCommand from './bot';
 
 // ===========================
 // Command Registry
@@ -19,6 +20,7 @@ export const commands: CommandHandler[] = [
   hugCommand,
   kissCommand,
   loveCommand,
+  botCommand,
   inviteCommand,
 ];
 

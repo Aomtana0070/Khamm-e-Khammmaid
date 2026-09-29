@@ -77,6 +77,27 @@ const adminCommand: CommandHandler = {
     },
     {
       type: 1,
+      name: 'luck',
+      description: 'Configure fishing luck and temporary luck events',
+      options: [
+        {
+          type: 3,
+          name: 'action',
+          description: 'Fishing luck action',
+          required: true,
+          choices: [
+            { name: 'Status', value: 'status' },
+            { name: 'Set server bonus', value: 'set' },
+            { name: 'Start luck event', value: 'event_start' },
+            { name: 'Stop luck event', value: 'event_stop' },
+          ],
+        },
+        { type: 4, name: 'percent', description: 'Luck bonus percentage', required: false, min_value: 0, max_value: 500 },
+        { type: 4, name: 'minutes', description: 'Luck event duration (5-1440 minutes)', required: false, min_value: 5, max_value: 1440 },
+      ],
+    },
+    {
+      type: 1,
       name: 'event',
       description: 'Start or stop event schedule and set its interval',
       options: [
@@ -366,6 +387,86 @@ const adminCommand: CommandHandler = {
         ephemeral: true,
       });
       return;
+    }
+
+    if (subcommand === 'luck') {
+      const action = interaction.options.getString('action', true);
+      const percent = interaction.options.getInteger('percent');
+      const minutes = interaction.options.getInteger('minutes');
+      const guild = await prisma.guild.upsert({
+        where: { id: interaction.guildId },
+        update: {},
+        create: { id: interaction.guildId, name: interaction.guild?.name ?? interaction.guildId },
+      });
+
+      if (action === 'status') {
+        const eventActive = guild.fishingEventLuckUntil && guild.fishingEventLuckUntil > new Date();
+        const eventStatus = eventActive
+          ? `🟢 **+${guild.fishingEventLuckBonus}%** until <t:${Math.floor(guild.fishingEventLuckUntil!.getTime() / 1000)}:R>`
+          : '⚪ ไม่มี event luck ที่กำลังทำงาน';
+        await interaction.reply({
+          embeds: [CafeEmbed.main('Fishing Luck', `โบนัสโชคประจำเซิร์ฟเวอร์: **+${guild.fishingLuckBonus}%**\nFishing Luck Event: ${eventStatus}`)],
+          ephemeral: true,
+        });
+        return;
+      }
+
+      if (action === 'set') {
+        if (percent === null) {
+          await interaction.reply({ content: 'ระบุ percent ตั้งแต่ 0 ถึง 500 ครับ', ephemeral: true });
+          return;
+        }
+        await prisma.guild.update({ where: { id: interaction.guildId }, data: { fishingLuckBonus: percent } });
+        await writeAdminLog(interaction.guildId, interaction.user.id, 'fishing_luck_set', `percent=${percent}`);
+        await interaction.reply({ embeds: [CafeEmbed.success('ตั้ง Fishing Luck แล้ว', `โบนัสโชคประจำเซิร์ฟเวอร์: **+${percent}%**`)] });
+        return;
+      }
+
+      if (action === 'event_start') {
+        if (percent === null || percent < 1 || minutes === null) {
+          await interaction.reply({ content: 'ระบุ percent ตั้งแต่ 1 ถึง 500 และ minutes ตั้งแต่ 5 ถึง 1440 ครับ', ephemeral: true });
+          return;
+        }
+        const until = new Date(Date.now() + minutes * 60_000);
+        await prisma.guild.update({
+          where: { id: interaction.guildId },
+          data: { fishingEventLuckBonus: percent, fishingEventLuckUntil: until },
+        });
+        await writeAdminLog(interaction.guildId, interaction.user.id, 'fishing_luck_event_start', `percent=${percent} minutes=${minutes}`);
+
+        let announced = false;
+        const announcementChannel = guild.maidChannelId
+          ? await interaction.guild?.channels.fetch(guild.maidChannelId).catch(() => null)
+          : null;
+        if (announcementChannel?.isTextBased() && 'send' in announcementChannel) {
+          await announcementChannel.send({
+            embeds: [CafeEmbed.success('🎣 Fishing Luck Event!', `โชคตกปลาเพิ่ม **+${percent}%** เป็นเวลา **${minutes} นาที** รีบมาใช้เบ็ดกับเหยื่อแล้วลุ้นปลาหายากกันครับ!`)],
+          }).then(() => { announced = true; }).catch(() => undefined);
+        }
+        await interaction.reply({
+          embeds: [CafeEmbed.success('เริ่ม Fishing Luck Event แล้ว', `โบนัส **+${percent}%** หมดเวลา <t:${Math.floor(until.getTime() / 1000)}:R>${announced ? '\nประกาศในช่อง Maid แล้วครับ' : '\nยังประกาศไม่ได้ ตรวจสอบช่องด้วย `/admin setup` ครับ'}`)],
+          ephemeral: true,
+        });
+        return;
+      }
+
+      if (action === 'event_stop') {
+        await prisma.guild.update({
+          where: { id: interaction.guildId },
+          data: { fishingEventLuckBonus: 0, fishingEventLuckUntil: null },
+        });
+        await writeAdminLog(interaction.guildId, interaction.user.id, 'fishing_luck_event_stop', '');
+        let announced = false;
+        const announcementChannel = guild.maidChannelId
+          ? await interaction.guild?.channels.fetch(guild.maidChannelId).catch(() => null)
+          : null;
+        if (announcementChannel?.isTextBased() && 'send' in announcementChannel) {
+          await announcementChannel.send({
+            embeds: [CafeEmbed.info('Fishing Luck Event จบแล้ว', 'กิจกรรมโบนัสโชคตกปลาจบลงแล้วครับ ขอบคุณทุกคนที่มาร่วมลุ้นปลา!')],
+          }).then(() => { announced = true; }).catch(() => undefined);
+        }
+        await interaction.reply({ embeds: [CafeEmbed.info('ปิด Fishing Luck Event แล้ว', `โบนัสโชคจาก event ถูกปิดแล้วครับ${announced ? ' ประกาศในช่อง Maid แล้ว' : ''}`)], ephemeral: true });
+      }
     }
 
     if (subcommand === 'event') {

@@ -60,6 +60,9 @@ model Guild {
   eventIntervalMinutes Int     @default(60)
   nextEventAt         DateTime?
   lastEventAt         DateTime?
+  fishingLuckBonus    Int      @default(0)
+  fishingEventLuckBonus Int    @default(0)
+  fishingEventLuckUntil DateTime?
   shopOpen            Boolean  @default(true)
 
   // Relations

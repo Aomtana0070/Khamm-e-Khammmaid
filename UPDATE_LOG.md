@@ -18,6 +18,7 @@
 • ตามหาปลา 100 ชนิด ตั้งแต่ **ง่ายมาก** ไปจนถึง **Jujutsu Shenanigans** และ **Vanguards**
 • ตกปลาเพื่อรับเงิน ไอเทมพิเศษ และ Hidden Badges
 • เช็กคอลเลกชันปลาได้ใน **สมุดปลา** ที่ Fishing Dock
+• Admin ตั้งโบนัสโชคประจำเซิร์ฟเวอร์และเปิด Fishing Luck Event แบบจับเวลาได้ผ่าน `/admin luck`
 
 ━━━━━━━━━━━━━━━━━━━━
 **🎮 NEW • PLAYABLE MINIGAMES**
